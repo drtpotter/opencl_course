@@ -7,14 +7,21 @@ CL_INCLUDE=/usr/local/cuda/include
 
 # C++ compiler and flags
 CXX=g++
-CXXFLAGS=-g -O0 -fPIC -I$(CL_INCLUDE) -std=c++11
 
-# Fortran compiler and flags
-FC=gfortran
-FFLAGS=-g -O0 -fPIC 
-
-# Link flags
-LFLAGS=-g -L$(CL_LIB) -lOpenCL -lstdc++  
+ifeq ($(OS),Windows_NT)
+	CXXFLAGS=-g -O3 -fPIC -I$(CL_INCLUDE) -std=c++11
+	LFLAGS=-g -L$(CL_LIB) -lOpenCL -lstdc++         
+else
+	uname_s := $(shell uname -s)
+	ifeq ($(uname_s),Linux)
+		CXXFLAGS=-g -O3 -fPIC -I$(CL_INCLUDE) -std=c++11
+		LFLAGS=-g -L$(CL_LIB) -lOpenCL -lstdc++         
+	endif
+	ifeq ($(uname_s),Darwin)
+		CXXFLAGS=-g -O3 -fPIC -std=c++11
+		LFLAGS=-g -lstdc++ -framework OpenCL        
+	endif
+endif
 
 # Matrix multiplication
 all:    mat_mult copy_rect_region mat_mult_create_binary mat_mult_use_binary mat_mult_transpose
