@@ -401,7 +401,7 @@ int main(int argc, char**argv) {
                             NULL), "Writing to buffer_B from host");
     
     // Now run the kernels for many iterations
-    int iterations=10;
+    int iterations=1;
 
     for (int n=0; n<iterations; n++) {
 
@@ -438,7 +438,7 @@ int main(int argc, char**argv) {
         const size_t global_size_mat_mult[]={ nrows_C, ncols_C };
         cl_event event_mat_mult;
 
-        // Now enqueue the kernel
+        // Now enqueue the standard matrix multiply kernel
         errchk(clEnqueueNDRangeKernel(  command_queue,
                                         kernel_mat_mult,
                                         work_dim,
@@ -519,8 +519,8 @@ int main(int argc, char**argv) {
         cl_double time_mat_mult_transp=(cl_double)(end_counter-start_counter)*(cl_double)1.0e-6;
 
         printf("Matrix transpose took %f ms\n", time_mat_transpose);
-        printf("Matrix multiply took %f ms\n", time_mat_mult);
-        printf("Matrix multiply using transposed A took %f ms\n", time_mat_mult_transp);
+        printf("Standard matrix multiply took %f ms\n", time_mat_mult);
+        printf("Transposed matrix multiply took %f ms\n", time_mat_mult_transp);
         printf("Transposed approach resulted in a speedup of %fx\n", time_mat_mult/(time_mat_transpose+time_mat_mult_transp));
     }
     
