@@ -1,9 +1,9 @@
 
 
 # Location of the OpenCL library, where libOpenCL.so resides
-CL_LIB=/usr/local/cuda/lib64
+CL_LIB=/etc/alternatives/opencl-intel-tools/lib64
 # Location of the OpenCL CL directory where cl.h and cl.hpp reside
-CL_INCLUDE=/usr/local/cuda/include
+CL_INCLUDE=/etc/alternatives/opencl-intel-tools/include
 
 # C++ compiler and flags
 CXX=g++
@@ -15,7 +15,7 @@ else
 	uname_s := $(shell uname -s)
 	ifeq ($(uname_s),Linux)
 		CXXFLAGS=-g -O3 -fPIC -I$(CL_INCLUDE) -std=c++11
-		LFLAGS=-g -L$(CL_LIB) -lOpenCL -lstdc++         
+		LFLAGS=-g -L$(CL_LIB) -lstdc++ -lOpenCL         
 	endif
 	ifeq ($(uname_s),Darwin)
 		CXXFLAGS=-g -O3 -fPIC -std=c++11

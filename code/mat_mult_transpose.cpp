@@ -74,7 +74,7 @@ int main(int argc, char**argv) {
     }
 
     // Select the device we are going to use 
-    cl_device_type target_device=CL_DEVICE_TYPE_GPU;
+    cl_device_type target_device=CL_DEVICE_TYPE_ALL;
 
     // Allocate memory to hold the total number of devices per platform 
     cl_uint* ndevices_1d=(cl_uint*)calloc(num_platforms, sizeof(cl_uint));
