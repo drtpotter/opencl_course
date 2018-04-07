@@ -24,7 +24,12 @@ else
 endif
 
 # Matrix multiplication
-all:    mat_mult copy_rect_region mat_mult_create_binary mat_mult_use_binary mat_mult_transpose
+all:    mat_mult \
+	copy_rect_region \
+	mat_mult_create_binary \
+	mat_mult_use_binary \
+	mat_mult_transpose \
+	mat_mult_transpose_vector
 
 mat_mult:	mat_mult.o
 	$(CXX) $(LFLAGS) -o $@ $<
@@ -41,8 +46,17 @@ copy_rect_region:	copy_rect_region.o
 mat_mult_transpose:	mat_mult_transpose.o
 	$(CXX) $(LFLAGS) -o $@ $<
 
+mat_mult_transpose_vector:	mat_mult_transpose_vector.o
+	$(CXX) $(LFLAGS) -o $@ $<
+
 %.o:	%.cpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
 clean:
-	rm -rf *.o *.mod *.bin mat_mult copy_rect_region mat_mult_create_binary mat_mult_use_binary mat_mult_transpose
+	rm -rf *.o *.mod *.bin \
+    mat_mult \
+    copy_rect_region \
+    mat_mult_create_binary \
+    mat_mult_use_binary \
+    mat_mult_transpose \
+    mat_mult_transpose_vector
