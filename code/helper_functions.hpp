@@ -1,5 +1,4 @@
 #include <iostream>
-#include <iomanip>
 
 void errchk(cl_int errcode, std::string message) {
     if (errcode!=CL_SUCCESS) {
