@@ -29,7 +29,8 @@ all:    mat_mult \
 	mat_mult_create_binary \
 	mat_mult_use_binary \
 	mat_mult_transpose \
-	mat_mult_transpose_vector
+	mat_mult_transpose_vector \
+    template
 
 mat_mult:	mat_mult.o
 	$(CXX) $(LFLAGS) -o $@ $<
@@ -49,7 +50,10 @@ mat_mult_transpose:	mat_mult_transpose.o
 mat_mult_transpose_vector:	mat_mult_transpose_vector.o
 	$(CXX) $(LFLAGS) -o $@ $<
 
-%.o:	%.cpp
+template:	template.o
+	$(CXX) $(LFLAGS) -o $@ $<
+
+%.o:	%.cpp helper_functions.hpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
 clean:
@@ -59,4 +63,5 @@ clean:
     mat_mult_create_binary \
     mat_mult_use_binary \
     mat_mult_transpose \
-    mat_mult_transpose_vector
+    mat_mult_transpose_vector \
+    template

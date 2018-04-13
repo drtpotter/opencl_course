@@ -38,12 +38,7 @@ SOFTWARE.
     #include "CL/cl.hpp"
 #endif
 
-void errchk(cl_int errcode, std::string message) {
-    if (errcode!=CL_SUCCESS) {
-        printf("Error, OpenCL call, failed at %s with error code %d \n", message.c_str(), errcode);
-        exit(OCL_EXIT);
-    }
-};
+#include "helper_functions.hpp"
 
 int main(int argc, char**argv) {
     // Useful for checking OpenCL errors
@@ -113,6 +108,7 @@ int main(int argc, char**argv) {
     assert(ndevices>=1);
 
     // Create a 2D array for devices and fill it with device information
+    int device_counter=0;
     cl_device_id** devices_2d=(cl_device_id**)calloc(num_platforms, sizeof(cl_device_id*));
     for (int i=0; i<num_platforms; i++) {
         // Create a 1D array for devices in a platform
@@ -124,6 +120,12 @@ int main(int argc, char**argv) {
                                     ndevices_1d[i],
                                     devices_2d[i],
                                     NULL),"Filling device arrays");
+        
+        for (int j=0; j<ndevices_1d[i]; j++) {
+            printf("Device %d:\n", device_counter);
+            report_on_device(devices_2d[i][j]);
+            device_counter++;
+        }
     }
 
     // Now make a context for each platform
