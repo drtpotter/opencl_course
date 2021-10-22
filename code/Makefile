@@ -1,9 +1,9 @@
 
 
 # Location of the OpenCL library, where libOpenCL.so resides
-CL_LIB=/usr/lib/x86_64-linux-gnu
+CL_LIB=/usr/local/cuda/lib64
 # Location of the OpenCL CL directory where cl.h and cl.hpp reside
-CL_INCLUDE=/usr/include
+CL_INCLUDE=/usr/local/cuda/include
 
 # C++ compiler and flags
 CXX=g++
