@@ -1,21 +1,21 @@
 
 
 # Location of the OpenCL library, where libOpenCL.so resides
-CL_LIB=/etc/alternatives/opencl-intel-tools/lib64
+CL_LIB=/usr/lib/x86_64-linux-gnu
 # Location of the OpenCL CL directory where cl.h and cl.hpp reside
-CL_INCLUDE=/etc/alternatives/opencl-intel-tools/include
+CL_INCLUDE=/usr/include
 
 # C++ compiler and flags
 CXX=g++
 
 ifeq ($(OS),Windows_NT)
 	CXXFLAGS=-g -O3 -fPIC -I$(CL_INCLUDE) -std=c++11
-	LFLAGS=-g -L$(CL_LIB) -lOpenCL -lstdc++         
+	LFLAGS=-g -L$(CL_LIB) -lstdc++ -lOpenCL         
 else
 	uname_s := $(shell uname -s)
 	ifeq ($(uname_s),Linux)
 		CXXFLAGS=-g -O3 -fPIC -I$(CL_INCLUDE) -std=c++11
-		LFLAGS=-g -L$(CL_LIB) -lstdc++ -lOpenCL         
+		LFLAGS=-g -L$(CL_LIB) -lstdc++ -lOpenCL		
 	endif
 	ifeq ($(uname_s),Darwin)
 		CXXFLAGS=-g -O3 -fPIC -std=c++11
@@ -33,25 +33,25 @@ all:    mat_mult \
     template
 
 mat_mult:	mat_mult.o
-	$(CXX) $(LFLAGS) -o $@ $<
+	$(CXX) -o $@ $< $(LFLAGS)
 
 mat_mult_create_binary:	mat_mult_create_binary.o
-	$(CXX) $(LFLAGS) -o $@ $<
+	$(CXX) -o $@ $< $(LFLAGS)
 
 mat_mult_use_binary:	mat_mult_use_binary.o
-	$(CXX) $(LFLAGS) -o $@ $<
+	$(CXX) -o $@ $< $(LFLAGS)
 
 copy_rect_region:	copy_rect_region.o
-	$(CXX) $(LFLAGS) -o $@ $<
+	$(CXX) -o $@ $< $(LFLAGS)
 
 mat_mult_transpose:	mat_mult_transpose.o
-	$(CXX) $(LFLAGS) -o $@ $<
+	$(CXX) -o $@ $< $(LFLAGS)
 
 mat_mult_transpose_vector:	mat_mult_transpose_vector.o
-	$(CXX) $(LFLAGS) -o $@ $<
+	$(CXX) -o $@ $< $(LFLAGS)
 
 template:	template.o
-	$(CXX) $(LFLAGS) -o $@ $<
+	$(CXX) -o $@ $< $(LFLAGS)
 
 %.o:	%.cpp helper_functions.hpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
