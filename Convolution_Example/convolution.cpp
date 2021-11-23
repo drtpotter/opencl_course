@@ -13,7 +13,7 @@ int main(int argc, char** argv) {
     cl_int ret_code = CL_SUCCESS;
     
     // Could be CL_DEVICE_TYPE_GPU or CL_DEVICE_TYPE_CPU
-    cl_device_type device_type = CL_DEVICE_TYPE_ALL;
+    cl_device_type device_type = CL_DEVICE_TYPE_GPU;
     
     // Get devices and contexts
     h_acquire_devices(device_type, 
