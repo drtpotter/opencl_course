@@ -75,9 +75,11 @@ std::map<cl_int, std::string> error_codes {
 void h_errchk(cl_int errcode, std::string message) {
     if (errcode!=CL_SUCCESS) {
         if (error_codes.count(errcode)>0) {
-            printf("Error, Opencl call failed at \"%s\" with error code %s\n", message.c_str(), error_codes[errcode].c_str());
+            printf("Error, Opencl call failed at \"%s\" with error code %s (%d)\n", 
+                    message.c_str(), error_codes[errcode].c_str(), errcode);
         } else {
-            printf("Error, OpenCL call failed at \"%s\" with error code %d\n", message.c_str(), errcode);
+            printf("Error, OpenCL call failed at \"%s\" with error code %d\n", 
+                    message.c_str(), errcode);
         }
         exit(OCL_EXIT);
     }
