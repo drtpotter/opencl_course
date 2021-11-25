@@ -9,7 +9,6 @@
 
 #define OCL_EXIT -20
 
-
 // Lookup table for error codes
 std::map<cl_int, std::string> error_codes {
     {CL_SUCCESS, "CL_SUCCESS"},

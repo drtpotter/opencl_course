@@ -1,6 +1,16 @@
 // Main
 
 #include "cl_helper.hpp"
+#include <cstdio>
+
+#define N0 1024
+#define N1 1024
+#define N2 64
+#define L0 1 
+#define R0 1
+#define L1 1
+#define R1 1
+
 
 int main(int argc, char** argv) {
     
@@ -34,7 +44,43 @@ int main(int argc, char** argv) {
             num_devices,
             num_command_queues,
             CL_FALSE,
-            CL_TRUE);
+            CL_FALSE);
+
+    // Create memory for images in and images out
+    float* images_out = (float*)calloc(N0*N1*N2, sizeof(float));
+    
+    // Create buffers
+    
+    // Read 32-bit kernel into file
+    size_t nelements_image_kernel = (L0+R0+1)*(L1+R1+1);
+    float* image_kernel = (float*)calloc(nelements_image_kernel, sizeof(float));
+    FILE* fp = fopen("image_kernel.dat", "r+b");
+    fread(image_kernel, sizeof(float), nelements_image_kernel, fp);
+    fclose(fp);
+
+    // Read 32-bit data into file
+    float* images_in = (float*)calloc(N0*N1*N2, sizeof(float));
+    fp = fopen("images_in.dat", "r+b");
+    fread(images_in, sizeof(float), N0*N1*N2, fp);
+    fclose(fp);
+
+    // Create output data
+
+    // Loop over buffers
+    // For each loop
+    // read into buffer
+    // run kernel
+    // read out into results
+
+    // Write output data to output file
+    fp = fopen("images_out.dat", "w+b");
+    fwrite(images_out, sizeof(float), N0*N1*N2, fp);
+    fclose(fp);
+
+    // Free memory
+    free(image_kernel);
+    free(images_in);
+    free(images_out);
 
     // Release command queues
     h_release_command_queues(command_queues, num_command_queues);
