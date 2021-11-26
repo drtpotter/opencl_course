@@ -33,7 +33,7 @@ convolution:	convolution.o
 template:	template.o
 	$(CXX) $(LFLAGS) -o $@ $< -lOpenCL
 
-%.o:	%.cpp cl_helper.hpp
+%.o:	%.cpp cl_helper.hpp kernels.cl
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
 clean:

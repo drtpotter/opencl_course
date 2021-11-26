@@ -2,12 +2,12 @@ __kernel void xcorr(
         __global float *src, 
         __global float *dst,
         __global float *kern,
-        int len0_src;
-        int len1_src; 
+        int len0_src,
+        int len1_src, 
         int pad0_l,
         int pad0_r,
         int pad1_l,
-        int pad1_r,      
+        int pad1_r      
     ) {
 
     // Perform a cross-correlation
@@ -30,7 +30,7 @@ __kernel void xcorr(
     long offset_src = gid0 * stride0_src + gid1;
     long offset_kern = pad0_l*stride0_kern + pad1_l; 
 
-    if (gid0 >= pad0_l) && (gid0 < len0_src) && (gid1 >= pad1_l) && (gid1 < len1_src) {
+    if ((gid0 >= pad0_l) && (gid0 < len0_src) && (gid1 >= pad1_l) && (gid1 < len1_src)) {
         float sum = 0;
         for (int i = -pad0_l; i<pad0_r; i++) {
             for (int j = -pad1_l; j<pad1_r; j++) {
@@ -38,6 +38,6 @@ __kernel void xcorr(
                     * src[offset_src + i*stride0_src + j*stride1_src];
             }
         }
-        dest[offset_src] = sum;
+        dst[offset_src] = sum;
     }
 }

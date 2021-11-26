@@ -122,6 +122,54 @@ cl_command_queue* h_create_command_queues(
     return command_queues;
 }
 
+// Function to build a program from a single device and context
+cl_program h_build_program(const char* source, cl_context context, cl_device_id device) {
+
+    cl_int ret_code;
+
+    cl_program program = clCreateProgramWithSource(
+            context,
+            1,
+            (const char**)(&source),
+            NULL,
+            &ret_code);
+        h_errchk(ret_code, "Creating OpenCL program");
+
+    // Try to build the program, print a log otherwise
+    ret_code = clBuildProgram(program, 
+                1, 
+                &device,
+                NULL,
+                NULL,
+                NULL);
+
+    if (ret_code!=CL_SUCCESS) {
+        size_t elements;
+        h_errchk(clGetProgramBuildInfo( program,
+                                        device,
+                                        CL_PROGRAM_BUILD_LOG,
+                                        0,
+                                        NULL,
+                                        &elements),"Checking build log");
+
+        // Make up the build log string
+        char* buildlog=(char*)calloc(elements, 1);
+
+        h_errchk(clGetProgramBuildInfo( program,
+                                        device,
+                                        CL_PROGRAM_BUILD_LOG,
+                                        elements,
+                                        buildlog,
+                                        NULL), "Filling the build log");
+        printf("Build log is %s\n", buildlog);
+        free(buildlog);
+        exit(OCL_EXIT);
+    }
+
+    return program;
+}
+
+
 // Function to release command queues
 void h_release_command_queues(cl_command_queue *command_queues, cl_uint num_command_queues) {
     // Release command queues
