@@ -9,17 +9,17 @@ CL_INCLUDE=/usr/local/cuda/include
 CXX=g++
 
 ifeq ($(OS),Windows_NT)
-	CXXFLAGS=-g -O3 -fPIC -I$(CL_INCLUDE) -std=c++11
-	LFLAGS=-g -L$(CL_LIB) -lstdc++         
+	CXXFLAGS=-g -O2 -fPIC -fopenmp -I$(CL_INCLUDE) -std=c++11
+	LFLAGS=-g -L$(CL_LIB) -lstdc++ -fopenmp    
 else
 	uname_s := $(shell uname -s)
 	ifeq ($(uname_s),Linux)
-		CXXFLAGS=-g -O3 -fPIC -I$(CL_INCLUDE) -std=c++11
-		LFLAGS=-g -L$(CL_LIB) -lstdc++          
+		CXXFLAGS=-g -O2 -fPIC -fopenmp -I$(CL_INCLUDE) -std=c++11
+		LFLAGS=-g -L$(CL_LIB) -lstdc++ -fopenmp         
 	endif
 	ifeq ($(uname_s),Darwin)
-		CXXFLAGS=-g -O3 -fPIC -std=c++11
-		LFLAGS=-g -lstdc++ -framework OpenCL        
+		CXXFLAGS=-g -O2 -fPIC -fopenmp -std=c++11
+		LFLAGS=-g -lstdc++ -framework OpenCL -fopenmp       
 	endif
 endif
 
@@ -37,11 +37,6 @@ template:	template.o
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
 clean:
-	rm -rf *.o *.mod *.bin \
-    mat_mult \
-    copy_rect_region \
-    mat_mult_create_binary \
-    mat_mult_use_binary \
-    mat_mult_transpose \
-    mat_mult_transpose_vector \
-    template
+	rm -rf *.o *.mod *.dat \
+    template \
+    convolution \

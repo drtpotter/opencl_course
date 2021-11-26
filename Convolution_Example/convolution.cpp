@@ -54,6 +54,7 @@ int main(int argc, char** argv) {
     // Image_in will have dimensions (NIMAGES, N0, N1) and will have row-major ordering
 
     // Read in images
+    size_t nbytes;
     float* images_in = (float*)h_read_file("images_in.dat", "rb", &nbytes);
     assert(nbytes == NIMAGES*N0*N1*sizeof(float));
 
@@ -63,7 +64,6 @@ int main(int argc, char** argv) {
     assert(nbytes == nelements_image_kernel*sizeof(float));
 
     // Read kernel sources 
-    size_t nbytes;
     const char* filename = "kernels.cl";
     char* source = (char*)h_read_file(filename, "r", &nbytes);
 
@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
                 N0*N1*sizeof(float),
                 NULL,
                 &ret_code);
-        h_errck(ret_code, "Creating buffers for sources");
+        h_errchk(ret_code, "Creating buffers for sources");
 
         // Create buffers for destination
         buffer_dests[n] = clCreateBuffer(
@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
                 N0*N1*sizeof(float),
                 NULL,
                 &ret_code);
-        h_errck(ret_code, "Creating buffers for destinations");
+        h_errchk(ret_code, "Creating buffers for destinations");
 
         // Copy host memory for the image kernel
         buffer_kerns[n] = clCreateBuffer(
@@ -111,27 +111,81 @@ int main(int argc, char** argv) {
                 nelements_image_kernel*sizeof(float),
                 (void*)image_kernel,
                 &ret_code);
-        h_errck(ret_code, "Creating buffers for image kernel");
+        h_errchk(ret_code, "Creating buffers for image kernel");
+
+        // Just for kernel arguments
+        cl_int len0_src = N0, len1_src = N1, pad0_l = L0, pad0_r = R0, pad1_l = L1, pad1_r = R1;
+
+        // Set kernel arguments here for convenience
+        h_errchk(clSetKernelArg(kernels[n], 0, sizeof(buffer_srces[n]), &buffer_srces[n]), "Set kernel argument 0");
+        h_errchk(clSetKernelArg(kernels[n], 1, sizeof(buffer_dests[n]), &buffer_dests[n]), "Set kernel argument 1");
+        h_errchk(clSetKernelArg(kernels[n], 2, sizeof(buffer_kerns[n]), &buffer_kerns[n]), "Set kernel argument 2");
+        h_errchk(clSetKernelArg(kernels[n], 3, sizeof(cl_int), &len0_src),  "Set kernel argument 3");
+        h_errchk(clSetKernelArg(kernels[n], 4, sizeof(cl_int), &len1_src),  "Set kernel argument 4");
+        h_errchk(clSetKernelArg(kernels[n], 5, sizeof(cl_int), &pad0_l),    "Set kernel argument 5");
+        h_errchk(clSetKernelArg(kernels[n], 6, sizeof(cl_int), &pad0_r),    "Set kernel argument 6");
+        h_errchk(clSetKernelArg(kernels[n], 7, sizeof(cl_int), &pad1_l),    "Set kernel argument 7");
+        h_errchk(clSetKernelArg(kernels[n], 8, sizeof(cl_int), &pad1_r),    "Set kernel argument 8");
     }
 
     // Use OpenMP to dynamically distribute threads across the available workflow of images
     //omp_set_dynamic(0);
     //omp_set_num_threads(num_devices);
 
-    #pragma omp parallel for default(none) schedule(dynamic, 1) num_threads(num_devices) 
+    #pragma omp parallel for default(none) schedule(dynamic, 1) num_threads(num_devices) \
+        shared(images_in, buffer_dests, buffer_srces, images_out, command_queues, kernels)
     for (cl_uint n=0; n<NIMAGES; n++) {
         // Get the thread_id
         int tid = omp_get_thread_num();
-
         
-    
-    }
+        // Load memory from images in using the offset
+        size_t offset = n*N0*N1*sizeof(float);
 
-    // Loop over buffers using openmp
-    // For each loop
-    // read into buffer
-    // run kernel
-    // read out into results
+        // Write from main memory to the buffer
+        h_errchk(clEnqueueWriteBuffer(
+                    command_queues[tid],
+                    buffer_srces[tid],
+                    CL_FALSE,
+                    offset,
+                    N0*N1*sizeof(float),
+                    images_in,
+                    0,
+                    NULL,
+                    NULL), "Writing to buffer");
+
+        // Enqueue the kernel
+        cl_uint work_dims = 2;
+        const size_t local_size[] = {16, 16};
+
+        size_t gs_0 = N0/local_size[0];
+        if (N0 % local_size[0] > 0) gs_0 += local_size[0];
+        size_t gs_1 = N1/local_size[1];
+        if (N1 % local_size[1] > 0) gs_1 += local_size[1];
+        const size_t global_size[] = {gs_0, gs_1};
+
+        h_errchk(clEnqueueNDRangeKernel(
+                    command_queues[tid],
+                    kernels[tid],
+                    work_dims,
+                    NULL,
+                    global_size,
+                    local_size,
+                    0, 
+                    NULL,
+                    NULL), "Running the xcorr kernel");
+
+        // Read from the buffer to main memory and block
+        h_errchk(clEnqueueReadBuffer(
+                    command_queues[tid],
+                    buffer_dests[tid],
+                    CL_TRUE,
+                    offset,
+                    N0*N1*sizeof(float),
+                    images_out,
+                    0,
+                    NULL,
+                    NULL), "Writing to buffer");
+    }
 
     // Write output data to output file
     FILE* fp = fopen("images_out.dat", "w+b");
