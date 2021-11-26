@@ -134,6 +134,31 @@ void h_release_command_queues(cl_command_queue *command_queues, cl_uint num_comm
     free(command_queues);
 }
 
+void* h_read_file(const char* filename, const char* mode, size_t *nbytes) {
+
+    FILE *fp = fopen(filename, mode);
+    if (fp == NULL) {
+        printf("Error in reading OpenCL source file %s", filename);
+        exit(OCL_EXIT);
+    }
+    fseek(fp, 0, SEEK_END);
+    // Extract the number of bytes in this file
+    *nbytes = ftell(fp);
+
+    // Rewind the file
+    rewind(fp);
+
+    // Buffer to read from
+    void *buffer = calloc((*nbytes)+1, 1);
+    
+    // Null Termination, in case this gets converted to string
+    char* source = (char*)buffer;
+    source[*nbytes] = '\0';
+    fread(buffer, 1, *nbytes, fp);
+    fclose(fp);
+    return buffer;
+}
+
 // Function to report information on a compute device
 void h_report_on_device(cl_device_id device) {
     using namespace std;

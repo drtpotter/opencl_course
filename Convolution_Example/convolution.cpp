@@ -1,5 +1,6 @@
 // Main
 
+#include <assert.h>
 #include "cl_helper.hpp"
 #include <cstdio>
 
@@ -46,44 +47,82 @@ int main(int argc, char** argv) {
             CL_FALSE,
             CL_FALSE);
 
-    // Create memory for images in and images out
-    float* images_out = (float*)calloc(N0*N1*N2, sizeof(float));
+    // Read kernel sources 
+    size_t nbytes;
+    const char* filename = "kernels.cl";
+    char* source = (char*)h_read_file(filename, "r", &nbytes);
+
+    // Create Programs and kernels using this source
+    cl_program *programs = (cl_program*)calloc(num_devices, sizeof(cl_program));
+    cl_kernel *kernels = (cl_kernel*)calloc(num_devices, sizeof(cl_kernel));
     
-    // Create buffers
+    for (cl_uint n=0; n<num_devices; n++) {
+        // Make the program from source
+        programs[n] = clCreateProgramWithSource(
+            contexts[n],
+            1,
+            (const char**)(&source),
+            NULL,
+            &ret_code);
+        h_errchk(ret_code, "Creating OpenCL program");
+
+        // Build the program, need to collect clGetProgramBuildInfo and the CL_PROGRAM_BUILD_LOG
+        h_errchk(clBuildProgram(programs[n], 
+                    1, 
+                    &devices[n],
+                    NULL,
+                    NULL,
+                    NULL), "Building OpenCL program");
+
+        // And make the kernel
+        kernels[n] = clCreateKernel(programs[n], "xcorr", &ret_code);
+        h_errchk(ret_code, "Making a kernel");
+
+    }
+
+   
+    // Create memory for images out
+    //float* images_out = (float*)calloc(N0*N1*N2, sizeof(float));
     
-    // Read 32-bit kernel into file
-    size_t nelements_image_kernel = (L0+R0+1)*(L1+R1+1);
-    float* image_kernel = (float*)calloc(nelements_image_kernel, sizeof(float));
-    FILE* fp = fopen("image_kernel.dat", "r+b");
-    fread(image_kernel, sizeof(float), nelements_image_kernel, fp);
-    fclose(fp);
+    // Read in images
+    //float* images_in = (float*)h_read_file("images_in.dat", "rb", &nbytes);
+    //assert(nbytes == N0*N1*N2*sizeof(float));
 
-    // Read 32-bit data into file
-    float* images_in = (float*)calloc(N0*N1*N2, sizeof(float));
-    fp = fopen("images_in.dat", "r+b");
-    fread(images_in, sizeof(float), N0*N1*N2, fp);
-    fclose(fp);
+    // Read in image Kernel
+    //size_t nelements_image_kernel = (L0+R0+1)*(L1+R1+1);
+    //float* image_kernel = (float*)h_read_file("image_kernel.dat", "rb", &nbytes);
+    //assert(nbytes == nelements_image_kernel*sizeof(float));
 
-    // Create output data
 
-    // Loop over buffers
+
+    // Loop over buffers using openmp
     // For each loop
     // read into buffer
     // run kernel
     // read out into results
 
     // Write output data to output file
-    fp = fopen("images_out.dat", "w+b");
-    fwrite(images_out, sizeof(float), N0*N1*N2, fp);
-    fclose(fp);
+    //FILE* fp = fopen("images_out.dat", "w+b");
+    //fwrite(images_out, sizeof(float), N0*N1*N2, fp);
+    //fclose(fp);
 
     // Free memory
-    free(image_kernel);
-    free(images_in);
-    free(images_out);
+    free(source);
+    //free(image_kernel);
+    //free(images_in);
+    //free(images_out);
+
 
     // Release command queues
     h_release_command_queues(command_queues, num_command_queues);
+
+    // Release programs and kernels
+    for (cl_uint n=0; n<num_devices; n++) {
+        h_errchk(clReleaseKernel(kernels[n]), "Releasing kernel");
+        h_errchk(clReleaseProgram(programs[n]), "Releasing program");
+    }
+    free(programs);
+    free(kernels);
 
     // Release devices and contexts
     h_release_devices(devices, num_devices, contexts, platforms);
