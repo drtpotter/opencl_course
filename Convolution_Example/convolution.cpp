@@ -6,13 +6,13 @@
 #include <omp.h>
 
 #define N0 1024
-#define N1 1024
-#define NIMAGES 64
+#define N1 1280
+#define NIMAGES 1024
+#define NITERS 10
 #define L0 1 
 #define R0 1
 #define L1 1
 #define R1 1
-
 
 int main(int argc, char** argv) {
     
@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
     cl_int ret_code = CL_SUCCESS;
     
     // Could be CL_DEVICE_TYPE_GPU or CL_DEVICE_TYPE_CPU
-    cl_device_type device_type = CL_DEVICE_TYPE_GPU;
+    cl_device_type device_type = CL_DEVICE_TYPE_ALL;
     
     // Get devices and contexts
     h_acquire_devices(device_type, 
@@ -131,60 +131,75 @@ int main(int argc, char** argv) {
     // Use OpenMP to dynamically distribute threads across the available workflow of images
     //omp_set_dynamic(0);
     //omp_set_num_threads(num_devices);
+    cl_uint* it_count = (cl_uint*)calloc(num_devices, sizeof(cl_uint)); 
 
-    #pragma omp parallel for default(none) schedule(dynamic, 1) num_threads(num_devices) \
-        shared(images_in, buffer_dests, buffer_srces, images_out, command_queues, kernels)
-    for (cl_uint n=0; n<NIMAGES; n++) {
-        // Get the thread_id
-        int tid = omp_get_thread_num();
+    for (cl_uint i = 0; i<NITERS; i++) {
+        printf("Processing iteration %d of %d\n", i, NITERS);
         
-        // Load memory from images in using the offset
-        size_t offset = n*N0*N1*sizeof(float);
+        #pragma omp parallel for default(none) schedule(dynamic, 1) num_threads(num_devices) \
+            shared(images_in, buffer_dests, buffer_srces, images_out, command_queues, kernels, buffer_kerns, it_count)
+        for (cl_uint n=0; n<NIMAGES; n++) {
+            // Get the thread_id
+            int tid = omp_get_thread_num();
+            it_count[tid] += 1;
+            
+            // Load memory from images in using the offset
+            size_t offset = N0*N1*sizeof(float);
 
-        // Write from main memory to the buffer
-        h_errchk(clEnqueueWriteBuffer(
-                    command_queues[tid],
-                    buffer_srces[tid],
-                    CL_FALSE,
-                    offset,
-                    N0*N1*sizeof(float),
-                    images_in,
-                    0,
-                    NULL,
-                    NULL), "Writing to buffer");
+            //printf("Processing image %d of %d with device %d\n", n+1, NIMAGES, tid);
+            
+            // Write from main memory to the buffer
+            h_errchk(clEnqueueWriteBuffer(
+                        command_queues[tid],
+                        buffer_srces[tid],
+                        CL_FALSE,
+                        0,
+                        N0*N1*sizeof(float),
+                        images_in + offset,
+                        0,
+                        NULL,
+                        NULL), "Writing to buffer");
 
-        // Enqueue the kernel
-        cl_uint work_dims = 2;
-        const size_t local_size[] = {16, 16};
+            // Enqueue the kernel
+            cl_uint work_dims = 2;
+            const size_t local_size[] = {16, 16};
 
-        size_t gs_0 = N0/local_size[0];
-        if (N0 % local_size[0] > 0) gs_0 += local_size[0];
-        size_t gs_1 = N1/local_size[1];
-        if (N1 % local_size[1] > 0) gs_1 += local_size[1];
-        const size_t global_size[] = {gs_0, gs_1};
+            size_t gs_0 = N0/local_size[0];
+            if (N0 % local_size[0] > 0) gs_0 += local_size[0];
+            size_t gs_1 = N1/local_size[1];
+            if (N1 % local_size[1] > 0) gs_1 += local_size[1];
+            const size_t global_size[] = {gs_0, gs_1};
 
-        h_errchk(clEnqueueNDRangeKernel(
-                    command_queues[tid],
-                    kernels[tid],
-                    work_dims,
-                    NULL,
-                    global_size,
-                    local_size,
-                    0, 
-                    NULL,
-                    NULL), "Running the xcorr kernel");
+            h_errchk(clEnqueueNDRangeKernel(
+                        command_queues[tid],
+                        kernels[tid],
+                        work_dims,
+                        NULL,
+                        global_size,
+                        local_size,
+                        0, 
+                        NULL,
+                        NULL), "Running the xcorr kernel");
 
-        // Read from the buffer to main memory and block
-        h_errchk(clEnqueueReadBuffer(
-                    command_queues[tid],
-                    buffer_dests[tid],
-                    CL_TRUE,
-                    offset,
-                    N0*N1*sizeof(float),
-                    images_out,
-                    0,
-                    NULL,
-                    NULL), "Writing to buffer");
+            // Read from the buffer to main memory and block
+            h_errchk(clEnqueueReadBuffer(
+                        command_queues[tid],
+                        buffer_dests[tid],
+                        CL_TRUE,
+                        0,
+                        N0*N1*sizeof(float),
+                        images_out + offset,
+                        0,
+                        NULL,
+                        NULL), "Writing to buffer");
+        }
+    }
+
+    cl_uint num_images = NITERS*NIMAGES;
+    for (cl_uint i = 0; i< num_devices; i++) {
+        //h_report_on_device(devices[i]);
+        float pct = 100*float(it_count[i])/float(num_images);
+        printf("Device %d processed %d of %d images (%0.2f\%)\n", i, it_count[i], num_images, pct);
     }
 
     // Write output data to output file
@@ -197,6 +212,7 @@ int main(int argc, char** argv) {
     free(image_kernel);
     free(images_in);
     free(images_out);
+    free(it_count);
 
     // Release command queues
     h_release_command_queues(command_queues, num_command_queues);

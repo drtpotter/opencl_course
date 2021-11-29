@@ -37,6 +37,6 @@ template:	template.o
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
 clean:
-	rm -rf *.o *.mod *.dat \
+	rm -rf *.o *.mod \
     template \
     convolution \
