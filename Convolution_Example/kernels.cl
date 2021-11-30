@@ -28,12 +28,12 @@ __kernel void xcorr(
 
     // Assuming C ordering for arrays
     long offset_src = gid0 * stride0_src + gid1;
-    long offset_kern = pad0_l*stride0_kern + pad1_l; 
+    long offset_kern = pad0_l*stride0_kern + pad1_l*stride1_kern; 
 
     if ((gid0 >= pad0_l) && (gid0 < len0_src) && (gid1 >= pad1_l) && (gid1 < len1_src)) {
-        float sum = 0;
-        for (int i = -pad0_l; i<pad0_r; i++) {
-            for (int j = -pad1_l; j<pad1_r; j++) {
+        float sum = 0.0;
+        for (int i = -pad0_l; i<= pad0_r; i++) {
+            for (int j = -pad1_l; j <= pad1_r; j++) {
                 sum += kern[offset_kern + i*stride0_kern + j*stride1_kern] 
                     * src[offset_src + i*stride0_src + j*stride1_src];
             }

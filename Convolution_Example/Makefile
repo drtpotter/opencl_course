@@ -24,10 +24,10 @@ else
 endif
 
 # Matrix multiplication
-all:	convolution \
+all:	xcorr \
 		template	
 
-convolution:	convolution.o
+xcorr:	xcorr.o
 	$(CXX) $(LFLAGS) -o $@ $< -lOpenCL
 
 template:	template.o
@@ -39,4 +39,4 @@ template:	template.o
 clean:
 	rm -rf *.o *.mod \
     template \
-    convolution \
+    xcorr \

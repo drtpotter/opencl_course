@@ -9,10 +9,10 @@
 #define N1 1280
 #define NIMAGES 1024
 #define NITERS 10
-#define L0 1 
-#define R0 1
-#define L1 1
-#define R1 1
+#define L0 0 
+#define R0 2
+#define L1 0
+#define R1 2
 
 int main(int argc, char** argv) {
     
@@ -137,14 +137,16 @@ int main(int argc, char** argv) {
         printf("Processing iteration %d of %d\n", i, NITERS);
         
         #pragma omp parallel for default(none) schedule(dynamic, 1) num_threads(num_devices) \
-            shared(images_in, buffer_dests, buffer_srces, images_out, command_queues, kernels, buffer_kerns, it_count)
+            shared(images_in, buffer_dests, buffer_srces, \
+                    images_out, image_kernel, nelements_image_kernel, \
+                    command_queues, kernels, buffer_kerns, it_count)
         for (cl_uint n=0; n<NIMAGES; n++) {
             // Get the thread_id
             int tid = omp_get_thread_num();
             it_count[tid] += 1;
             
             // Load memory from images in using the offset
-            size_t offset = N0*N1*sizeof(float);
+            size_t offset = n*N0*N1;
 
             //printf("Processing image %d of %d with device %d\n", n+1, NIMAGES, tid);
             
@@ -158,17 +160,29 @@ int main(int argc, char** argv) {
                         images_in + offset,
                         0,
                         NULL,
-                        NULL), "Writing to buffer");
+                        NULL), "Writing to source buffer");
+            
+            // Upload the images kernel
+            h_errchk(clEnqueueWriteBuffer(
+                        command_queues[tid],
+                        buffer_kerns[tid],
+                        CL_FALSE,
+                        0,
+                        nelements_image_kernel*sizeof(float),
+                        image_kernel,
+                        0,
+                        NULL,
+                        NULL), "Writing to image kernel buffer");
 
             // Enqueue the kernel
             cl_uint work_dims = 2;
             const size_t local_size[] = {16, 16};
 
             size_t gs_0 = N0/local_size[0];
-            if (N0 % local_size[0] > 0) gs_0 += local_size[0];
+            if (N0 % local_size[0] > 0) gs_0 += 1;
             size_t gs_1 = N1/local_size[1];
-            if (N1 % local_size[1] > 0) gs_1 += local_size[1];
-            const size_t global_size[] = {gs_0, gs_1};
+            if (N1 % local_size[1] > 0) gs_1 += 1;
+            const size_t global_size[] = {gs_0*local_size[0], gs_1*local_size[1]};
 
             h_errchk(clEnqueueNDRangeKernel(
                         command_queues[tid],
