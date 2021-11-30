@@ -4,6 +4,7 @@
 #include "cl_helper.hpp"
 #include <cstdio>
 #include <omp.h>
+#include <chrono>
 
 #define N0 1024
 #define N1 1280
@@ -26,6 +27,14 @@ int main(int argc, char** argv) {
     
     // Could be CL_DEVICE_TYPE_GPU or CL_DEVICE_TYPE_CPU
     cl_device_type device_type = CL_DEVICE_TYPE_ALL;
+    
+    if (argc>1) {
+        if (strcmp(argv[1], "GPU")==0) {
+            device_type = CL_DEVICE_TYPE_GPU;
+        } else {
+            device_type = CL_DEVICE_TYPE_CPU;
+        }
+    }
     
     // Get devices and contexts
     h_acquire_devices(device_type, 
@@ -131,10 +140,14 @@ int main(int argc, char** argv) {
     // Use OpenMP to dynamically distribute threads across the available workflow of images
     //omp_set_dynamic(0);
     //omp_set_num_threads(num_devices);
+    
+    // This counter keeps track of images process by all iterations
+    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+    
     cl_uint* it_count = (cl_uint*)calloc(num_devices, sizeof(cl_uint)); 
 
     for (cl_uint i = 0; i<NITERS; i++) {
-        printf("Processing iteration %d of %d\n", i, NITERS);
+        printf("Processing iteration %d of %d\n", i+1, NITERS);
         
         #pragma omp parallel for default(none) schedule(dynamic, 1) num_threads(num_devices) \
             shared(images_in, buffer_dests, buffer_srces, \
@@ -209,12 +222,17 @@ int main(int argc, char** argv) {
         }
     }
 
+    std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2-t1);
+    double duration = time_span.count();
+    
     cl_uint num_images = NITERS*NIMAGES;
     for (cl_uint i = 0; i< num_devices; i++) {
         //h_report_on_device(devices[i]);
         float pct = 100*float(it_count[i])/float(num_images);
         printf("Device %d processed %d of %d images (%0.2f\%)\n", i, it_count[i], num_images, pct);
     }
+    printf("Overall processing rate %0.2f images/s\n", (double)num_images/duration);
 
     // Write output data to output file
     FILE* fp = fopen("images_out.dat", "w+b");

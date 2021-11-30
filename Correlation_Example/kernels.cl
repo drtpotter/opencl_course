@@ -30,7 +30,7 @@ __kernel void xcorr(
     long offset_src = gid0 * stride0_src + gid1;
     long offset_kern = pad0_l*stride0_kern + pad1_l*stride1_kern; 
 
-    if ((gid0 >= pad0_l) && (gid0 < len0_src) && (gid1 >= pad1_l) && (gid1 < len1_src)) {
+    if ((gid0 >= pad0_l) && (gid0 < len0_src-pad0_r) && (gid1 >= pad1_l) && (gid1 < len1_src-pad1_r)) {
         float sum = 0.0;
         for (int i = -pad0_l; i<= pad0_r; i++) {
             for (int j = -pad1_l; j <= pad1_r; j++) {
