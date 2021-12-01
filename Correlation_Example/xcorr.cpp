@@ -9,7 +9,6 @@
 #define N0 1024
 #define N1 1280
 #define NIMAGES 1024
-#define NITERS 10
 #define L0 0 
 #define R0 2
 #define L1 0
@@ -28,13 +27,24 @@ int main(int argc, char** argv) {
     // Could be CL_DEVICE_TYPE_GPU or CL_DEVICE_TYPE_CPU
     cl_device_type device_type = CL_DEVICE_TYPE_ALL;
     
+    // Get the device to use
     if (argc>1) {
         if (strcmp(argv[1], "GPU")==0) {
+            // We get the GPU type
             device_type = CL_DEVICE_TYPE_GPU;
-        } else {
+        } else if (strcmp(argv[1], "CPU")==0) {
+            // We get the CPU type
             device_type = CL_DEVICE_TYPE_CPU;
-        }
+        } 
+        // Else we get the ALL type
     }
+    
+    // Get iteration count
+    cl_int NITERS = 10;
+    if (argc>2) {
+        NITERS = atoi(argv[2]);
+    }
+    
     
     // Get devices and contexts
     h_acquire_devices(device_type, 
@@ -60,7 +70,7 @@ int main(int argc, char** argv) {
     // Create memory for images out
     float* images_out = (float*)calloc(NIMAGES*N0*N1, sizeof(float));
     
-    // Image_in will have dimensions (NIMAGES, N0, N1) and will have row-major ordering
+    // images_in will have dimensions (NIMAGES, N0, N1) and will have row-major ordering
 
     // Read in images
     size_t nbytes;
