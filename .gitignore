@@ -1,5 +1,6 @@
 # Ignore the compiled code
-code/*.o
-code/*.bin
-code/*.swp
-.ipynb_checkpoints
+*.o
+*.bin
+*.swp
+*.ipynb_checkpoints
+*.exe
