@@ -1,5 +1,6 @@
 #include <iostream>
 #include <map>
+#include <cstdio>
 
 #ifdef __APPLE__
     #include "OpenCL/opencl.h"
@@ -261,6 +262,7 @@ int main(int argc, char** argv) {
     
     // Report on available devices
     for (cl_uint n=0; n<num_devices; n++) {
+        std::cout << "device " << n << std::endl;
         h_report_on_device(devices[n]);
     }
     
